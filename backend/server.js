@@ -332,7 +332,7 @@ app.get("/api/photos", async (req, res) => {
 });
 
 const { BlobServiceClient } = require("@azure/storage-blob");
-const path = require("path");
+
 const fs = require("fs");
 
 // Azure Blob 연결
