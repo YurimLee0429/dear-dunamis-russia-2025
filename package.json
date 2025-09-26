@@ -1,0 +1,18 @@
+{
+  "name": "mission-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "@azure/storage-blob": "^12.28.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^4.18.2",
+    "http": "^0.0.1-security",
+    "mssql": "^9.1.1",
+    "multer": "^2.0.2",
+    "path": "^0.12.7",
+    "socket.io": "^4.7.2"
+  },
+  "scripts": {
+    "start": "node backend/server.js"
+  }
+}
