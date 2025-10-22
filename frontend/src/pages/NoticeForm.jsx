@@ -41,7 +41,7 @@ export default function NoticeForm() {
   return (
     <div className="px-4 sm:px-6 lg:px-12 py-6 max-w-3xl mx-auto">
       <h1 className="text-2xl sm:text-4xl font-extrabold text-purple-600 mb-6 sm:mb-8 text-center">
-        ✍️ 새 공지 작성
+        ✍️ 새 글 작성
       </h1>
 
       <form

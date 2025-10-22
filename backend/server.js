@@ -162,10 +162,13 @@ app.get("/api/notices", async (req, res) => {
 });
 
 // ✅ 여러 장 업로드 가능하게 변경
+// ✅ 여러 장 업로드 가능 + 안정성 보완 버전
 app.post("/api/notices/upload", upload.array("images", 5), async (req, res) => {
   const { title, content, author } = req.body;
-  // 여러 장 업로드된 파일 경로 배열 생성
-  const image_urls = req.files.map((file) => `/uploads/${file.filename}`);
+
+  const baseUrl = "https://dear-dunamis-russia-2025-1.onrender.com";
+  const image_urls =
+    req.files?.map((file) => `${baseUrl}/uploads/${file.filename}`) || [];
 
   try {
     const pool = await poolPromise;
@@ -180,8 +183,17 @@ app.post("/api/notices/upload", upload.array("images", 5), async (req, res) => {
          VALUES (@title, @content, @author, @image_urls, GETDATE())`
       );
 
-    res.json({ message: "공지사항 등록 완료", image_urls });
+    res.json({
+      message: "공지사항 등록 완료",
+      notice: {
+        title,
+        content,
+        author,
+        image_urls,
+      },
+    });
   } catch (err) {
+    console.error("❌ 공지 등록 중 오류:", err);
     res.status(500).send(err.message);
   }
 });
