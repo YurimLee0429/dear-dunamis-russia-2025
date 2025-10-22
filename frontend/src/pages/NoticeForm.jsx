@@ -8,19 +8,33 @@ export default function NoticeForm() {
     files: [],
   });
 
-  const [previewUrls, setPreviewUrls] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]); // 파일 미리보기
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
-  // ✅ 이미지 미리보기 생성
+  // ✅ 이미지 미리보기 + 누적 추가
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setForm({ ...form, files });
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setPreviewUrls(previews);
+    const newFiles = Array.from(e.target.files);
+    const allFiles = [...form.files, ...newFiles]; // 기존 + 새 파일
+    setForm({ ...form, files: allFiles });
+
+    const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls((prev) => [...prev, ...newPreviews]); // 기존 + 새 미리보기
   };
 
-  // ✅ 업로드 (FormData 방식)
+  // ✅ 개별 사진 삭제 (미리보기 & 실제 파일 모두)
+  const handleRemoveImage = (index) => {
+    const updatedFiles = form.files.filter((_, i) => i !== index);
+    const updatedPreviews = previewUrls.filter((_, i) => i !== index);
+
+    // 메모리 해제
+    URL.revokeObjectURL(previewUrls[index]);
+
+    setForm({ ...form, files: updatedFiles });
+    setPreviewUrls(updatedPreviews);
+  };
+
+  // ✅ 업로드 (FormData)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -42,13 +56,13 @@ export default function NoticeForm() {
         "https://dear-dunamis-russia-2025-1.onrender.com/api/notices/upload",
         {
           method: "POST",
-          body: formData, // ✅ JSON 대신 FormData 직접 전송
+          body: formData,
         }
       );
 
       if (!res.ok) throw new Error("업로드 실패");
 
-      // ✅ 미리보기 URL 해제
+      // 미리보기 메모리 해제
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
 
       alert("등록 완료 💜");
@@ -107,19 +121,27 @@ export default function NoticeForm() {
           onChange={handleFileChange}
         />
 
-        {/* 미리보기 */}
+        {/* 미리보기 (삭제 버튼 포함) */}
         {previewUrls.length > 0 && (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6">
             {previewUrls.map((url, idx) => (
               <div
                 key={idx}
-                className="relative border border-purple-200 rounded-lg overflow-hidden"
+                className="relative border border-purple-200 rounded-lg overflow-hidden group"
               >
                 <img
                   src={url}
                   alt={`미리보기 ${idx + 1}`}
                   className="w-full h-24 sm:h-28 object-cover"
                 />
+                {/* ❌ 삭제 버튼 */}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(idx)}
+                  className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
