@@ -8,19 +8,26 @@ export default function NoticeForm() {
     files: [],
   });
 
-  const [previewUrls, setPreviewUrls] = useState([]); // ✅ 미리보기용 상태 추가
-
+  const [previewUrls, setPreviewUrls] = useState([]);
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
+  // 이미지 파일 선택 시 미리보기 생성
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setForm({ ...form, files });
-
-    // ✅ File 객체들을 브라우저에서 미리보기 URL로 변환
     const previews = files.map((file) => URL.createObjectURL(file));
     setPreviewUrls(previews);
   };
+
+  // ✅ base64 변환 함수
+  const convertToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,26 +37,36 @@ export default function NoticeForm() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", form.title);
-    formData.append("content", form.content);
-    formData.append("author", currentUser.nickname);
+    // 파일을 base64로 변환
+    const base64Images = await Promise.all(form.files.map(convertToBase64));
 
-    // 여러 장 업로드 지원
-    form.files.forEach((file) => formData.append("images", file));
+    const data = {
+      title: form.title,
+      content: form.content,
+      author: currentUser.nickname,
+      images: base64Images, // base64 배열
+    };
 
-    await fetch(
-      "https://dear-dunamis-russia-2025-1.onrender.com/api/notices/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    try {
+      const res = await fetch(
+        "https://dear-dunamis-russia-2025-1.onrender.com/api/notices/upload",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      );
 
-    // ✅ 미리보기 URL 해제 (메모리 누수 방지)
-    previewUrls.forEach((url) => URL.revokeObjectURL(url));
+      if (!res.ok) throw new Error("업로드 실패");
 
-    navigate("/notices");
+      // ✅ 미리보기 URL 해제
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+
+      navigate("/notices");
+    } catch (err) {
+      console.error("❌ 업로드 중 오류:", err);
+      alert("업로드 중 오류가 발생했습니다.");
+    }
   };
 
   return (
@@ -61,7 +78,6 @@ export default function NoticeForm() {
       <form
         onSubmit={handleSubmit}
         className="bg-purple-50 p-6 sm:p-10 shadow-xl rounded-lg"
-        encType="multipart/form-data"
       >
         {/* 제목 */}
         <input
@@ -101,7 +117,7 @@ export default function NoticeForm() {
           onChange={handleFileChange}
         />
 
-        {/* ✅ 미리보기 썸네일 영역 */}
+        {/* 미리보기 */}
         {previewUrls.length > 0 && (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6">
             {previewUrls.map((url, idx) => (
