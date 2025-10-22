@@ -10,7 +10,9 @@ export default function PhotoDetail() {
 
   const fetchPhoto = async () => {
     try {
-      const res = await fetch(`https://dear-dunamis-russia-2025-1.onrender.com/api/photos/${id}`);
+      const res = await fetch(
+        `https://dear-dunamis-russia-2025-1.onrender.com/api/photos/${id}`
+      );
       const data = await res.json();
       setPhoto(data);
     } catch (err) {
@@ -25,7 +27,10 @@ export default function PhotoDetail() {
   const handleDelete = async () => {
     if (!window.confirm("정말 삭제하시겠습니까?")) return;
     try {
-      await fetch(` https://dear-dunamis-russia-2025-1.onrender.com/api/photos/${id}}`, { method: "DELETE" });
+      await fetch(
+        `https://dear-dunamis-russia-2025-1.onrender.com/api/photos/${id}`,
+        { method: "DELETE" }
+      );
       alert("삭제되었습니다 📸");
       navigate("/photos");
     } catch (err) {
@@ -44,9 +49,12 @@ export default function PhotoDetail() {
   return (
     <div className="px-4 sm:px-6 lg:px-12 py-8 max-w-4xl mx-auto mt-40">
       <div className="bg-white shadow-xl overflow-hidden">
+        {/* ✅ base64와 URL 둘 다 대응 */}
         <img
           src={
-            photo.image_url.startsWith("http")
+            photo.image_url.startsWith("data:image")
+              ? photo.image_url
+              : photo.image_url.startsWith("http")
               ? photo.image_url
               : `https://dear-dunamis-russia-2025-1.onrender.com${photo.image_url}`
           }
@@ -59,6 +67,7 @@ export default function PhotoDetail() {
             📸 {photo.uploader}
           </h2>
           <p className="text-gray-700 mb-4">{photo.description}</p>
+
           <div className="flex justify-end space-x-3">
             <button
               onClick={() => navigate("/photos")}
@@ -67,7 +76,7 @@ export default function PhotoDetail() {
               목록으로
             </button>
 
-            {/*  삭제 버튼: 작성자 본인 또는 관리자만 */}
+            {/* 삭제 버튼: 작성자 본인 또는 관리자만 */}
             {currentUser &&
               (currentUser.nickname === photo.uploader ||
                 currentUser.role === "admin") && (
