@@ -5,22 +5,24 @@ const http = require("http");
 const { Server } = require("socket.io");
 const multer = require("multer");
 const path = require("path");
+const { BlobServiceClient } = require("@azure/storage-blob"); // ✅ 꼭 위로!
 
-const app = express();
+const app = express(); // ✅ app 정의 먼저
 app.use(cors());
-app.use(express.json());
-const { BlobServiceClient } = require("@azure/storage-blob"); // ✅ 이 줄을 꼭 위로 올리기!
 
-// 업로드 폴더 정적 제공
+// ✅ 업로드 폴더 정적 제공
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// multer 저장소 설정
+// ✅ multer 저장소 설정
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
   filename: (req, file, cb) =>
     cb(null, Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
+
+// ✅ JSON 파싱은 multer 설정 뒤에!
+app.use(express.json());
 
 
 function requireAdmin(req, res, next) {
@@ -177,36 +179,47 @@ app.get("/api/notices", async (req, res) => {
 
 app.post("/api/notices/upload", upload.array("images", 5), async (req, res) => {
   const { title, content, author } = req.body;
+
   try {
     const imageUrls = [];
 
-    for (const file of req.files) {
-      const filePath = file.path;
-      const blobName = Date.now() + "-" + file.originalname;
-      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-      await blockBlobClient.uploadFile(filePath);
-      imageUrls.push(blockBlobClient.url);
-      fs.unlinkSync(filePath);
+    // 📸 파일이 있는 경우에만 Blob 업로드 실행
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const filePath = file.path;
+        const blobName = Date.now() + "-" + file.originalname;
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+        await blockBlobClient.uploadFile(filePath);
+        imageUrls.push(blockBlobClient.url);
+
+        // ⚙️ 업로드 후 로컬 임시 파일 삭제
+        fs.unlinkSync(filePath);
+      }
     }
 
+    // 🧠 DB 저장 (이미지가 없으면 NULL 처리)
     const pool = await poolPromise;
     await pool.request()
       .input("title", sql.NVarChar, title)
       .input("content", sql.NVarChar(sql.MAX), content)
       .input("author", sql.NVarChar, author)
-      .input("image_urls", sql.NVarChar(sql.MAX), JSON.stringify(imageUrls))
+      .input("image_urls", sql.NVarChar(sql.MAX), imageUrls.length > 0 ? JSON.stringify(imageUrls) : null)
       .query(`
         INSERT INTO notices (title, content, author, image_urls, created_at)
         VALUES (@title, @content, @author, @image_urls, GETDATE())
       `);
 
-    res.json({ message: "공지사항 등록 완료", imageUrls });
+    res.json({
+      message: imageUrls.length > 0 ? "📸 공지사항 등록 완료 (사진 포함)" : "📝 공지사항 등록 완료 (사진 없음)",
+      image_urls: imageUrls,
+    });
+
   } catch (err) {
     console.error("❌ 공지 등록 오류:", err);
     res.status(500).send(err.message);
   }
 });
-
 // 공지 상세
 app.get("/api/notices/:id", async (req, res) => {
   const { id } = req.params;
