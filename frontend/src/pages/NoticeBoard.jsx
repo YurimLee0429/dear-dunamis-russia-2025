@@ -96,12 +96,12 @@ export default function NoticeBoard() {
       ) : (
         <>
           {/* 공지 목록 */}
-          <div className="flex flex-col items-center gap-4 sm:gap-6">
+          <div className="flex flex-col items-center gap-5 sm:gap-7">
             {currentNotices.map((n) => (
               <div
                 key={n.id}
                 onClick={() => handleNoticeClick(n.id)}
-                className="w-full max-w-md bg-white border border-purple-200 shadow-sm hover:shadow-md transition-all cursor-pointer p-5 sm:p-6 rounded-none hover:bg-purple-50"
+                className="w-full max-w-3xl bg-white border border-purple-200 shadow-[0_2px_12px_rgba(128,0,128,0.12)] hover:shadow-[0_4px_18px_rgba(128,0,128,0.2)] transition-all cursor-pointer p-5 sm:p-6 rounded-none hover:bg-purple-50"
               >
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-lg sm:text-xl font-bold text-purple-700">
