@@ -8,6 +8,7 @@ export default function PrayerBoard() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
+  // ✅ 기도 목록 불러오기
   const fetchPrayers = async () => {
     try {
       const res = await fetch("https://dear-dunamis-russia-2025-1.onrender.com/api/prayers");
@@ -32,6 +33,16 @@ export default function PrayerBoard() {
     }
   };
 
+  // ✅ 제목 클릭 시 로그인 여부 확인
+  const handlePrayerClick = (id) => {
+    if (currentUser) {
+      navigate(`/prayers/${id}`);
+    } else {
+      alert("🙏 로그인 후 기도 내용을 볼 수 있습니다 💜");
+      navigate("/login");
+    }
+  };
+
   return (
     <div className="px-4 sm:px-6 lg:px-20 py-8 sm:py-12 max-w-full mx-auto">
       {/* 상단 헤더 */}
@@ -39,7 +50,9 @@ export default function PrayerBoard() {
         <h1 className="text-3xl sm:text-5xl font-bold text-purple-600 mb-3 sm:mb-4">
           🙏 러시아팀 기도제목
         </h1>
-        <p className="text-base sm:text-lg text-gray-500">우리가 같이 기도할게요 💜</p>
+        <p className="text-base sm:text-lg text-gray-500">
+          함께 마음 모아 기도해요 💜
+        </p>
       </div>
 
       {/* 새 글 작성 버튼 */}
@@ -65,14 +78,6 @@ export default function PrayerBoard() {
             📭 아직 등록된 기도제목이 없습니다.
           </p>
           <p className="text-gray-500 mb-6 sm:mb-8">기도를 함께 나눠주세요!</p>
-          {currentUser && (
-            <button
-              onClick={() => navigate("/prayers/new")}
-              className="bg-purple-500 text-white px-6 sm:px-8 py-2 sm:py-3 rounded hover:bg-purple-600 transition"
-            >
-              🙌 기도 작성하기
-            </button>
-          )}
         </div>
       ) : (
         <>
@@ -81,7 +86,7 @@ export default function PrayerBoard() {
             {currentPrayers.map((p) => (
               <div
                 key={p.id}
-                onClick={() => navigate(`/prayers/${p.id}`)}
+                onClick={() => handlePrayerClick(p.id)}
                 className="bg-white shadow-md rounded p-4 hover:shadow-lg transition cursor-pointer"
               >
                 <h2 className="text-lg font-bold text-purple-600 mb-2">{p.title}</h2>
@@ -108,7 +113,7 @@ export default function PrayerBoard() {
                   <tr
                     key={p.id}
                     className="hover:bg-purple-50 transition cursor-pointer border-b"
-                    onClick={() => navigate(`/prayers/${p.id}`)}
+                    onClick={() => handlePrayerClick(p.id)}
                   >
                     <td className="px-4 sm:px-10 py-4 sm:py-6 font-bold text-purple-600 text-base sm:text-xl">
                       {p.title}
@@ -127,7 +132,7 @@ export default function PrayerBoard() {
         </>
       )}
 
-      {/* 페이지네이션 버튼 */}
+      {/* 페이지네이션 */}
       {prayers.length > itemsPerPage && (
         <div className="flex justify-center mt-6 sm:mt-8 space-x-1 sm:space-x-2">
           <button
