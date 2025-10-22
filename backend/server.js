@@ -5,7 +5,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const multer = require("multer");
 const path = require("path");
-
+const { BlobServiceClient } = require("@azure/storage-blob"); // ✅ 이 줄을 꼭 위로 올리기!
 const app = express();
 app.use(cors());
 app.use(express.json());
