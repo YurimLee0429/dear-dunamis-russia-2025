@@ -12,7 +12,7 @@ export default function NoticeForm() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
-  // 이미지 파일 선택 시 미리보기 생성
+  // ✅ 이미지 미리보기 생성
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setForm({ ...form, files });
@@ -20,15 +20,7 @@ export default function NoticeForm() {
     setPreviewUrls(previews);
   };
 
-  // ✅ base64 변환 함수
-  const convertToBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
+  // ✅ 업로드 (FormData 방식)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -37,23 +29,20 @@ export default function NoticeForm() {
       return;
     }
 
-    // 파일을 base64로 변환
-    const base64Images = await Promise.all(form.files.map(convertToBase64));
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("content", form.content);
+    formData.append("author", currentUser.nickname);
 
-    const data = {
-      title: form.title,
-      content: form.content,
-      author: currentUser.nickname,
-      images: base64Images, // base64 배열
-    };
+    // 여러 장 이미지 추가
+    form.files.forEach((file) => formData.append("images", file));
 
     try {
       const res = await fetch(
         "https://dear-dunamis-russia-2025-1.onrender.com/api/notices/upload",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: formData, // ✅ JSON 대신 FormData 직접 전송
         }
       );
 
@@ -62,6 +51,7 @@ export default function NoticeForm() {
       // ✅ 미리보기 URL 해제
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
 
+      alert("등록 완료 💜");
       navigate("/notices");
     } catch (err) {
       console.error("❌ 업로드 중 오류:", err);
@@ -98,7 +88,7 @@ export default function NoticeForm() {
           required
         />
 
-        {/* 작성자 표시 */}
+        {/* 작성자 */}
         {currentUser && (
           <p className="mb-4 text-gray-600 text-sm sm:text-base">
             ✍️ 작성자:{" "}

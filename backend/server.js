@@ -59,6 +59,14 @@ const poolPromise = new sql.ConnectionPool(dbConfig)
   })
   .catch((err) => console.error("❌ DB Connection Failed:", err));
 
+
+
+
+const blobServiceClient = BlobServiceClient.fromConnectionString(
+  process.env.AZURE_STORAGE_CONNECTION_STRING
+);
+const containerClient = blobServiceClient.getContainerClient("photos"); // ✅ 모든 이미지 photos 컨테이너에 저장
+
 /* -------------------- 사용자 -------------------- */
 
 // 🔧 보조 함수: 두 자리 문자열 보장
@@ -150,7 +158,7 @@ app.post("/api/users/login", async (req, res) => {
 
 /* -------------------- 공지사항 CRUD -------------------- */
 /* -------------------- 공지사항 CRUD -------------------- */
-app.use(express.json({ limit: "50mb" })); // base64 이미지 허용
+
 
 // 공지 목록
 app.get("/api/notices", async (req, res) => {
@@ -166,24 +174,32 @@ app.get("/api/notices", async (req, res) => {
   }
 });
 
-// ✅ base64 이미지 저장 (multer 제거)
-app.post("/api/notices/upload", async (req, res) => {
-  const { title, content, author, images } = req.body;
-
+app.post("/api/notices/upload", upload.array("images", 5), async (req, res) => {
+  const { title, content, author } = req.body;
   try {
+    const imageUrls = [];
+
+    for (const file of req.files) {
+      const filePath = file.path;
+      const blobName = Date.now() + "-" + file.originalname;
+      const blockBlobClient = noticeContainer.getBlockBlobClient(blobName);
+      await blockBlobClient.uploadFile(filePath);
+      imageUrls.push(blockBlobClient.url);
+      fs.unlinkSync(filePath);
+    }
+
     const pool = await poolPromise;
-    await pool
-      .request()
+    await pool.request()
       .input("title", sql.NVarChar, title)
       .input("content", sql.NVarChar(sql.MAX), content)
       .input("author", sql.NVarChar, author)
-      .input("image_urls", sql.NVarChar(sql.MAX), JSON.stringify(images))
+      .input("image_urls", sql.NVarChar(sql.MAX), JSON.stringify(imageUrls))
       .query(`
         INSERT INTO notices (title, content, author, image_urls, created_at)
         VALUES (@title, @content, @author, @image_urls, GETDATE())
       `);
 
-    res.json({ message: "공지사항 등록 완료", images });
+    res.json({ message: "공지사항 등록 완료", imageUrls });
   } catch (err) {
     console.error("❌ 공지 등록 오류:", err);
     res.status(500).send(err.message);
@@ -348,10 +364,8 @@ const { BlobServiceClient } = require("@azure/storage-blob");
 const fs = require("fs");
 
 // Azure Blob 연결
-const blobServiceClient = BlobServiceClient.fromConnectionString(
-  process.env.AZURE_STORAGE_CONNECTION_STRING
-);
-const containerClient = blobServiceClient.getContainerClient("photos");
+
+
 
 app.post("/api/photos/upload", upload.single("photo"), async (req, res) => {
   const { uploader, description } = req.body;
