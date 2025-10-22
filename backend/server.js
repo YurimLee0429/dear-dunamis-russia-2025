@@ -5,10 +5,11 @@ const http = require("http");
 const { Server } = require("socket.io");
 const multer = require("multer");
 const path = require("path");
-const { BlobServiceClient } = require("@azure/storage-blob"); // ✅ 이 줄을 꼭 위로 올리기!
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+const { BlobServiceClient } = require("@azure/storage-blob"); // ✅ 이 줄을 꼭 위로 올리기!
 
 // 업로드 폴더 정적 제공
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -182,7 +183,7 @@ app.post("/api/notices/upload", upload.array("images", 5), async (req, res) => {
     for (const file of req.files) {
       const filePath = file.path;
       const blobName = Date.now() + "-" + file.originalname;
-      const blockBlobClient = noticeContainer.getBlockBlobClient(blobName);
+      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
       await blockBlobClient.uploadFile(filePath);
       imageUrls.push(blockBlobClient.url);
       fs.unlinkSync(filePath);
@@ -359,7 +360,7 @@ app.get("/api/photos", async (req, res) => {
   }
 });
 
-const { BlobServiceClient } = require("@azure/storage-blob");
+
 
 const fs = require("fs");
 
