@@ -5,7 +5,7 @@ export default function NoticeForm() {
   const [form, setForm] = useState({
     title: "",
     content: "",
-    file: null,
+    files: [],
   });
 
   const navigate = useNavigate();
@@ -23,9 +23,9 @@ export default function NoticeForm() {
     formData.append("title", form.title);
     formData.append("content", form.content);
     formData.append("author", currentUser.nickname);
-    if (form.file) {
-      formData.append("image", form.file);
-    }
+
+    // 여러 장 업로드 지원
+    form.files.forEach((file) => formData.append("images", file));
 
     await fetch(
       "https://dear-dunamis-russia-2025-1.onrender.com/api/notices/upload",
@@ -82,8 +82,11 @@ export default function NoticeForm() {
         <input
           type="file"
           accept="image/*"
+          multiple
           className="w-full mb-6 p-3 sm:p-4 text-base sm:text-lg border border-purple-300 rounded bg-white"
-          onChange={(e) => setForm({ ...form, file: e.target.files[0] })}
+          onChange={(e) =>
+            setForm({ ...form, files: Array.from(e.target.files) })
+          }
         />
 
         {/* 등록 버튼 */}

@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function NoticeBoard() {
   const [notices, setNotices] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
   const fetchNotices = async () => {
@@ -42,9 +41,7 @@ export default function NoticeBoard() {
   const currentNotices = notices.slice(startIndex, startIndex + itemsPerPage);
 
   const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
   return (
@@ -54,9 +51,7 @@ export default function NoticeBoard() {
         <h1 className="text-3xl sm:text-5xl font-bold text-purple-600 mb-3 sm:mb-4">
           🐻 러시아팀의 소식
         </h1>
-        <p className="text-base sm:text-lg text-gray-500">
-          좋은 소식을 전하며 ✨
-        </p>
+        <p className="text-base sm:text-lg text-gray-500">좋은 소식을 전하며 ✨</p>
       </div>
 
       {/* 새 글 작성 버튼 */}
@@ -77,9 +72,7 @@ export default function NoticeBoard() {
           <p className="text-2xl sm:text-3xl text-purple-500 mb-4">
             📭 아직 등록된 공지가 없습니다.
           </p>
-          <p className="text-gray-500 mb-6 sm:mb-8">
-            새로운 소식을 공유해주세요!
-          </p>
+          <p className="text-gray-500 mb-6 sm:mb-8">새로운 소식을 공유해주세요!</p>
           {currentUser && (
             <Link
               to="/notices/new"
@@ -91,51 +84,32 @@ export default function NoticeBoard() {
         </div>
       ) : (
         <>
-          {/* 목록 */}
-          <div className="flex flex-col gap-6 sm:gap-10">
+          {/* 공지 목록 (제목만 표시) */}
+          <div className="flex flex-col divide-y divide-purple-100 bg-white shadow rounded-lg">
             {currentNotices.map((n) => (
-              <div
-                key={n.id}
-                className="bg-white shadow-md sm:shadow-xl rounded-lg overflow-hidden hover:shadow-2xl transition w-full"
-              >
-                {/* 카드 내부 */}
-                <div className="flex flex-col md:flex-row">
-                  {n.image_url && (
-                    <img
-                      src={`https://dear-dunamis-russia-2025-1.onrender.com${n.image_url}`}
-                      alt="공지"
-                      className="w-full md:w-1/3 h-48 sm:h-64 object-cover"
-                    />
-                  )}
-
-                  <div className="flex-1 p-4 sm:p-8 flex flex-col justify-between">
-                    <div>
-                      <Link to={`/notices/${n.id}`}>
-                        <h2 className="text-xl sm:text-3xl font-bold text-purple-600 mb-2 sm:mb-4 hover:underline">
-                          {n.title}
-                        </h2>
-                      </Link>
-                      <p className="text-gray-700 text-base sm:text-lg mb-3 sm:mb-4 line-clamp-4">
-                        {n.content}
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-center text-sm sm:text-base text-gray-500">
-                      <span>✍️ {n.author}</span>
-                      <span>
-                        📅 {new Date(n.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
+              <div key={n.id} className="p-5 sm:p-6 hover:bg-purple-50 transition">
+                <div className="flex justify-between items-center">
+                  <Link to={`/notices/${n.id}`}>
+                    <h2 className="text-lg sm:text-2xl font-semibold text-purple-700 hover:underline">
+                      {n.title}
+                    </h2>
+                  </Link>
+                  <span className="text-gray-500 text-sm sm:text-base">
+                    {new Date(n.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-1 text-gray-500 text-sm">
+                  <span>✍️ {n.author}</span>
                 </div>
 
-                {/* 삭제 버튼 */}
+                {/* 삭제 버튼 (작성자 or 관리자만) */}
                 {currentUser &&
                   (currentUser.role === "admin" ||
                     currentUser.nickname === n.author) && (
-                    <div className="flex justify-end p-3 sm:p-4 border-t">
+                    <div className="flex justify-end mt-3">
                       <button
                         onClick={() => handleDelete(n.id)}
-                        className="bg-red-400 px-4 sm:px-5 py-1.5 sm:py-2 text-white hover:bg-red-500 text-xs sm:text-sm rounded"
+                        className="bg-red-400 px-3 py-1 text-white rounded text-xs hover:bg-red-500"
                       >
                         삭제
                       </button>
@@ -155,7 +129,6 @@ export default function NoticeBoard() {
               >
                 ◀ 이전
               </button>
-
               {Array.from({ length: totalPages }, (_, idx) => (
                 <button
                   key={idx + 1}
@@ -169,7 +142,6 @@ export default function NoticeBoard() {
                   {idx + 1}
                 </button>
               ))}
-
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === totalPages}

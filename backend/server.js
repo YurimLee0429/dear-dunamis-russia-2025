@@ -161,9 +161,11 @@ app.get("/api/notices", async (req, res) => {
   }
 });
 
-app.post("/api/notices/upload", upload.single("image"), async (req, res) => {
+// ✅ 여러 장 업로드 가능하게 변경
+app.post("/api/notices/upload", upload.array("images", 5), async (req, res) => {
   const { title, content, author } = req.body;
-  const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+  // 여러 장 업로드된 파일 경로 배열 생성
+  const image_urls = req.files.map((file) => `/uploads/${file.filename}`);
 
   try {
     const pool = await poolPromise;
@@ -172,16 +174,18 @@ app.post("/api/notices/upload", upload.single("image"), async (req, res) => {
       .input("title", sql.NVarChar, title)
       .input("content", sql.NVarChar(sql.MAX), content)
       .input("author", sql.NVarChar, author)
-      .input("image_url", sql.NVarChar, image_url)
+      .input("image_urls", sql.NVarChar(sql.MAX), JSON.stringify(image_urls))
       .query(
-        "INSERT INTO notices (title, content, author, image_url, created_at) VALUES (@title, @content, @author, @image_url, GETDATE())"
+        `INSERT INTO notices (title, content, author, image_urls, created_at)
+         VALUES (@title, @content, @author, @image_urls, GETDATE())`
       );
 
-    res.json({ message: "공지사항 등록 완료", image_url });
+    res.json({ message: "공지사항 등록 완료", image_urls });
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
+
 
 app.get("/api/notices/:id", async (req, res) => {
   const { id } = req.params;
@@ -204,7 +208,8 @@ app.get("/api/notices/:id", async (req, res) => {
 
 app.put("/api/notices/:id", async (req, res) => {
   const { id } = req.params;
-  const { title, content, image_url } = req.body;
+  const { title, content, image_urls } = req.body;
+
   try {
     const pool = await poolPromise;
     await pool
@@ -212,10 +217,11 @@ app.put("/api/notices/:id", async (req, res) => {
       .input("id", sql.Int, id)
       .input("title", sql.NVarChar, title)
       .input("content", sql.NVarChar(sql.MAX), content)
-      .input("image_url", sql.NVarChar, image_url || null)
+      .input("image_urls", sql.NVarChar, image_urls || null)
       .query(
-        "UPDATE notices SET title=@title, content=@content, image_url=@image_url WHERE id=@id"
+        "UPDATE notices SET title=@title, content=@content, image_urls=@image_urls WHERE id=@id"
       );
+
     res.json({ message: "공지사항 수정 완료" });
   } catch (err) {
     res.status(500).send(err.message);
