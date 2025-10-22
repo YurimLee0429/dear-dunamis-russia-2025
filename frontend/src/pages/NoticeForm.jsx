@@ -8,8 +8,19 @@ export default function NoticeForm() {
     files: [],
   });
 
+  const [previewUrls, setPreviewUrls] = useState([]); // ✅ 미리보기용 상태 추가
+
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setForm({ ...form, files });
+
+    // ✅ File 객체들을 브라우저에서 미리보기 URL로 변환
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(previews);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,6 +45,9 @@ export default function NoticeForm() {
         body: formData,
       }
     );
+
+    // ✅ 미리보기 URL 해제 (메모리 누수 방지)
+    previewUrls.forEach((url) => URL.revokeObjectURL(url));
 
     navigate("/notices");
   };
@@ -84,10 +98,26 @@ export default function NoticeForm() {
           accept="image/*"
           multiple
           className="w-full mb-6 p-3 sm:p-4 text-base sm:text-lg border border-purple-300 rounded bg-white"
-          onChange={(e) =>
-            setForm({ ...form, files: Array.from(e.target.files) })
-          }
+          onChange={handleFileChange}
         />
+
+        {/* ✅ 미리보기 썸네일 영역 */}
+        {previewUrls.length > 0 && (
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6">
+            {previewUrls.map((url, idx) => (
+              <div
+                key={idx}
+                className="relative border border-purple-200 rounded-lg overflow-hidden"
+              >
+                <img
+                  src={url}
+                  alt={`미리보기 ${idx + 1}`}
+                  className="w-full h-24 sm:h-28 object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* 등록 버튼 */}
         <button
