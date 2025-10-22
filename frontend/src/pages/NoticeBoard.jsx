@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function NoticeBoard() {
   const [notices, setNotices] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const currentUser = JSON.parse(localStorage.getItem("user"));
+  const navigate = useNavigate();
 
   const fetchNotices = async () => {
     try {
@@ -36,6 +37,14 @@ export default function NoticeBoard() {
     }
   };
 
+  const handleNoticeClick = (id) => {
+    if (!currentUser) {
+      alert("로그인이 필요합니다!");
+      return;
+    }
+    navigate(`/notices/${id}`);
+  };
+
   const totalPages = Math.ceil(notices.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentNotices = notices.slice(startIndex, startIndex + itemsPerPage);
@@ -51,7 +60,9 @@ export default function NoticeBoard() {
         <h1 className="text-3xl sm:text-5xl font-bold text-purple-600 mb-3 sm:mb-4">
           🐻 러시아팀의 소식
         </h1>
-        <p className="text-base sm:text-lg text-gray-500">좋은 소식을 전하며 ✨</p>
+        <p className="text-base sm:text-lg text-gray-500">
+          좋은 소식을 전하며 ✨
+        </p>
       </div>
 
       {/* 새 글 작성 버튼 */}
@@ -84,34 +95,35 @@ export default function NoticeBoard() {
         </div>
       ) : (
         <>
-          {/* 공지 목록 (제목만 표시, 카드 간격 추가) */}
-          <div className="flex flex-col gap-4 sm:gap-6">
+          {/* 공지 목록 */}
+          <div className="flex flex-col items-center gap-4 sm:gap-6">
             {currentNotices.map((n) => (
               <div
                 key={n.id}
-                className="bg-white shadow-md rounded-lg p-5 sm:p-6 hover:shadow-lg hover:bg-purple-50 transition-all duration-200"
+                onClick={() => handleNoticeClick(n.id)}
+                className="w-full max-w-md bg-white border border-purple-200 shadow-sm hover:shadow-md transition-all cursor-pointer p-5 sm:p-6 rounded-none hover:bg-purple-50"
               >
                 <div className="flex justify-between items-center mb-2">
-                  <Link to={`/notices/${n.id}`}>
-                    <h2 className="text-lg sm:text-2xl font-semibold text-purple-700 hover:underline">
-                      {n.title}
-                    </h2>
-                  </Link>
+                  <h2 className="text-lg sm:text-xl font-bold text-purple-700">
+                    {n.title}
+                  </h2>
                   <span className="text-gray-500 text-sm sm:text-base">
                     {new Date(n.created_at).toLocaleDateString()}
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center text-gray-500 text-sm">
+                <div className="flex justify-between items-center text-gray-600 text-sm">
                   <span>✍️ {n.author}</span>
 
-                  {/* 삭제 버튼 (작성자 or 관리자만) */}
                   {currentUser &&
                     (currentUser.role === "admin" ||
                       currentUser.nickname === n.author) && (
                       <button
-                        onClick={() => handleDelete(n.id)}
-                        className="bg-red-400 px-3 py-1 text-white rounded text-xs hover:bg-red-500 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(n.id);
+                        }}
+                        className="bg-red-400 px-3 py-1 text-white text-xs hover:bg-red-500 transition"
                       >
                         삭제
                       </button>
@@ -135,7 +147,7 @@ export default function NoticeBoard() {
                 <button
                   key={idx + 1}
                   onClick={() => goToPage(idx + 1)}
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded text-sm sm:text-base ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded ${
                     currentPage === idx + 1
                       ? "bg-purple-600 text-white"
                       : "bg-purple-200 text-purple-800"
