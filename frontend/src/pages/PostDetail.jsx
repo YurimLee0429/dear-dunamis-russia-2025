@@ -37,7 +37,9 @@ export default function PostDetail() {
     });
 
     setComment("");
-    const res = await fetch(`https://dear-dunamis-russia-2025-1.onrender.com/api/comments/${id}`);
+    const res = await fetch(
+      `https://dear-dunamis-russia-2025-1.onrender.com/api/comments/${id}`
+    );
     setComments(await res.json());
   };
 
@@ -48,19 +50,23 @@ export default function PostDetail() {
       return;
     }
 
-    await fetch(`https://dear-dunamis-russia-2025-1.onrender.com/api/comments/${commentId}`, {
-      method: "DELETE",
-    });
-    const res = await fetch(`https://dear-dunamis-russia-2025-1.onrender.com/api/comments/${id}`);
+    await fetch(
+      `https://dear-dunamis-russia-2025-1.onrender.com/api/comments/${commentId}`,
+      { method: "DELETE" }
+    );
+    const res = await fetch(
+      `https://dear-dunamis-russia-2025-1.onrender.com/api/comments/${id}`
+    );
     setComments(await res.json());
   };
 
   const handleDeletePost = async () => {
     if (!window.confirm("정말 삭제하시겠습니까?")) return;
     try {
-      await fetch(`https://dear-dunamis-russia-2025-1.onrender.com/api/notices/${id}`, {
-        method: "DELETE",
-      });
+      await fetch(
+        `https://dear-dunamis-russia-2025-1.onrender.com/api/notices/${id}`,
+        { method: "DELETE" }
+      );
       alert("삭제되었습니다.");
       navigate("/notices");
     } catch (err) {
@@ -68,11 +74,21 @@ export default function PostDetail() {
     }
   };
 
-  if (!post) return <p className="text-center text-gray-500">⏳ 로딩중...</p>;
+  if (!post)
+    return <p className="text-center text-gray-500">⏳ 로딩중...</p>;
 
   const canDelete =
     currentUser &&
-    (currentUser.nickname === post.author || currentUser.nickname === "관리자");
+    (currentUser.nickname === post.author ||
+      currentUser.nickname === "관리자");
+
+  // ✅ 이미지 파싱 (여러 장 표시)
+  let images = [];
+  try {
+    if (post.image_urls) images = JSON.parse(post.image_urls);
+  } catch (e) {
+    console.error("❌ 이미지 파싱 오류:", e);
+  }
 
   return (
     <div className="px-4 sm:px-6 lg:px-12 py-6 sm:py-8 max-w-4xl mx-auto mt-20 sm:mt-28">
@@ -88,17 +104,18 @@ export default function PostDetail() {
           <span>🕒 {new Date(post.created_at).toLocaleString()}</span>
         </div>
 
-        {/* 이미지 */}
-        {post.image_url && (
-          <img
-            src={
-              post.image_url.startsWith("http")
-                ? post.image_url
-                : `https://dear-dunamis-russia-2025-1.onrender.com${post.image_url}`
-            }
-            alt="공지"
-            className="mb-4 sm:mb-6 w-full max-h-[300px] sm:max-h-[400px] object-cover rounded"
-          />
+        {/* ✅ 여러 장 이미지 표시 */}
+        {images.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {images.map((img, i) => (
+              <img
+                key={i}
+                src={img}
+                alt={`이미지 ${i + 1}`}
+                className="w-full rounded-lg object-cover shadow-md"
+              />
+            ))}
+          </div>
         )}
 
         {/* 내용 */}
@@ -146,7 +163,9 @@ export default function PostDetail() {
             </button>
           </div>
         ) : (
-          <p className="text-gray-500 mb-4">✍️ 댓글을 작성하려면 로그인하세요.</p>
+          <p className="text-gray-500 mb-4">
+            ✍️ 댓글을 작성하려면 로그인하세요.
+          </p>
         )}
 
         {/* 댓글 목록 */}
@@ -161,7 +180,8 @@ export default function PostDetail() {
                 : {c.content}
               </span>
               {currentUser &&
-                (currentUser.nickname === c.author || currentUser.nickname === "관리자") && (
+                (currentUser.nickname === c.author ||
+                  currentUser.nickname === "관리자") && (
                   <button
                     onClick={() => handleDeleteComment(c.id, c.author)}
                     className="text-xs sm:text-sm bg-red-400 text-white px-2 sm:px-3 py-1 rounded hover:bg-red-500 transition"

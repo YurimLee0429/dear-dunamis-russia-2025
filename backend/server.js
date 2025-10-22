@@ -149,6 +149,10 @@ app.post("/api/users/login", async (req, res) => {
 
 
 /* -------------------- 공지사항 CRUD -------------------- */
+/* -------------------- 공지사항 CRUD -------------------- */
+app.use(express.json({ limit: "50mb" })); // base64 이미지 허용
+
+// 공지 목록
 app.get("/api/notices", async (req, res) => {
   try {
     const pool = await poolPromise;
@@ -157,18 +161,14 @@ app.get("/api/notices", async (req, res) => {
       .query("SELECT * FROM notices ORDER BY created_at DESC");
     res.json(result.recordset);
   } catch (err) {
+    console.error("❌ 공지 목록 불러오기 오류:", err);
     res.status(500).send(err.message);
   }
 });
 
-// ✅ 여러 장 업로드 가능하게 변경
-// ✅ 여러 장 업로드 가능 + 안정성 보완 버전
-app.post("/api/notices/upload", upload.array("images", 5), async (req, res) => {
-  const { title, content, author } = req.body;
-
-  const baseUrl = "https://dear-dunamis-russia-2025-1.onrender.com";
-  const image_urls =
-    req.files?.map((file) => `${baseUrl}/uploads/${file.filename}`) || [];
+// ✅ base64 이미지 저장 (multer 제거)
+app.post("/api/notices/upload", async (req, res) => {
+  const { title, content, author, images } = req.body;
 
   try {
     const pool = await poolPromise;
@@ -177,28 +177,20 @@ app.post("/api/notices/upload", upload.array("images", 5), async (req, res) => {
       .input("title", sql.NVarChar, title)
       .input("content", sql.NVarChar(sql.MAX), content)
       .input("author", sql.NVarChar, author)
-      .input("image_urls", sql.NVarChar(sql.MAX), JSON.stringify(image_urls))
-      .query(
-        `INSERT INTO notices (title, content, author, image_urls, created_at)
-         VALUES (@title, @content, @author, @image_urls, GETDATE())`
-      );
+      .input("image_urls", sql.NVarChar(sql.MAX), JSON.stringify(images))
+      .query(`
+        INSERT INTO notices (title, content, author, image_urls, created_at)
+        VALUES (@title, @content, @author, @image_urls, GETDATE())
+      `);
 
-    res.json({
-      message: "공지사항 등록 완료",
-      notice: {
-        title,
-        content,
-        author,
-        image_urls,
-      },
-    });
+    res.json({ message: "공지사항 등록 완료", images });
   } catch (err) {
-    console.error("❌ 공지 등록 중 오류:", err);
+    console.error("❌ 공지 등록 오류:", err);
     res.status(500).send(err.message);
   }
 });
 
-
+// 공지 상세
 app.get("/api/notices/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -214,9 +206,11 @@ app.get("/api/notices/:id", async (req, res) => {
 
     res.json(result.recordset[0]);
   } catch (err) {
+    console.error("❌ 공지 상세 불러오기 오류:", err);
     res.status(500).send(err.message);
   }
 });
+
 
 app.put("/api/notices/:id", async (req, res) => {
   const { id } = req.params;
