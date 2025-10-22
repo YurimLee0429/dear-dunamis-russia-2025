@@ -84,11 +84,14 @@ export default function NoticeBoard() {
         </div>
       ) : (
         <>
-          {/* 공지 목록 (제목만 표시) */}
-          <div className="flex flex-col divide-y divide-purple-100 bg-white shadow rounded-lg">
+          {/* 공지 목록 (제목만 표시, 카드 간격 추가) */}
+          <div className="flex flex-col gap-4 sm:gap-6">
             {currentNotices.map((n) => (
-              <div key={n.id} className="p-5 sm:p-6 hover:bg-purple-50 transition">
-                <div className="flex justify-between items-center">
+              <div
+                key={n.id}
+                className="bg-white shadow-md rounded-lg p-5 sm:p-6 hover:shadow-lg hover:bg-purple-50 transition-all duration-200"
+              >
+                <div className="flex justify-between items-center mb-2">
                   <Link to={`/notices/${n.id}`}>
                     <h2 className="text-lg sm:text-2xl font-semibold text-purple-700 hover:underline">
                       {n.title}
@@ -98,30 +101,29 @@ export default function NoticeBoard() {
                     {new Date(n.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <div className="flex justify-between items-center mt-1 text-gray-500 text-sm">
-                  <span>✍️ {n.author}</span>
-                </div>
 
-                {/* 삭제 버튼 (작성자 or 관리자만) */}
-                {currentUser &&
-                  (currentUser.role === "admin" ||
-                    currentUser.nickname === n.author) && (
-                    <div className="flex justify-end mt-3">
+                <div className="flex justify-between items-center text-gray-500 text-sm">
+                  <span>✍️ {n.author}</span>
+
+                  {/* 삭제 버튼 (작성자 or 관리자만) */}
+                  {currentUser &&
+                    (currentUser.role === "admin" ||
+                      currentUser.nickname === n.author) && (
                       <button
                         onClick={() => handleDelete(n.id)}
-                        className="bg-red-400 px-3 py-1 text-white rounded text-xs hover:bg-red-500"
+                        className="bg-red-400 px-3 py-1 text-white rounded text-xs hover:bg-red-500 transition"
                       >
                         삭제
                       </button>
-                    </div>
-                  )}
+                    )}
+                </div>
               </div>
             ))}
           </div>
 
           {/* 페이지네이션 */}
           {totalPages > 1 && (
-            <div className="flex justify-center mt-8 sm:mt-10 space-x-1 sm:space-x-2">
+            <div className="flex justify-center mt-10 space-x-2">
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
